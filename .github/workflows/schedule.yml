@@ -1,0 +1,27 @@
+name: 30-Min Dashboard Auto Refresh
+
+on:
+  schedule:
+    # Runs automatically every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allows manual trigger anytime
+
+jobs:
+  run-auto-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Playwright & Browser
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run Dashboard Refresh Script
+        run: python refresh.py
