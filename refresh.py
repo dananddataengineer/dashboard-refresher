@@ -5,17 +5,21 @@ BASE_URL = "https://bi.apollohealthbridge.in"
 MAIN_URL = "https://bi.apollohealthbridge.in/dashboards/"
 
 def auto_refresh_all_dashboards():
+    overall_start = time.time()
+
     with sync_playwright() as p:
-        print("Launching cloud browser...")
+        print("🚀 Launching cloud browser...")
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # 1. Open the main dashboards page
-        print(f"Opening main page: {MAIN_URL}")
+        # Step 1: Open main dashboards page
+        print(f"📌 Opening main page: {MAIN_URL}")
+        main_start = time.time()
         page.goto(MAIN_URL, timeout=60000)
-        time.sleep(5)  # Wait 5 seconds for page links to render
+        time.sleep(5)
+        print(f"   Main page loaded in {round(time.time() - main_start, 2)} seconds.")
 
-        # 2. Auto-discover all dashboard links on the page
+        # Step 2: Discover all dashboard links
         links = page.locator("a[href*='/dashboards/']").all()
         found_urls = set()
 
@@ -26,25 +30,29 @@ def auto_refresh_all_dashboards():
                 found_urls.add(full_url)
 
         urls_list = list(found_urls)
-        
-        # If no internal dashboard links found, default to main page
         if not urls_list:
             urls_list = [MAIN_URL]
 
-        print(f"✓ Found {len(urls_list)} dashboard(s) to refresh!")
+        print(f"\n🔍 Found {len(urls_list)} dashboard(s) to refresh.\n" + "="*50)
 
-        # 3. Visit each discovered dashboard link
+        # Step 3: Visit each dashboard and measure exact loading time
         for idx, url in enumerate(urls_list, start=1):
             print(f"[{idx}/{len(urls_list)}] Refreshing: {url}")
+            dash_start = time.time()
+            
             try:
                 page.goto(url, timeout=60000)
-                time.sleep(10)  # Wait 10 seconds for charts and data to load
-                print(f"  ✓ Refreshed successfully: {page.title()}")
+                time.sleep(10)  # Wait for charts/data to finish rendering
+                
+                time_taken = round(time.time() - dash_start, 2)
+                print(f"   ✓ Success | Title: {page.title()} | Time Taken: {time_taken}s")
             except Exception as e:
-                print(f"  ❌ Error loading {url}: {e}")
+                time_taken = round(time.time() - dash_start, 2)
+                print(f"   ❌ Failed after {time_taken}s | Error: {e}")
 
         browser.close()
-        print("🎉 Finished refreshing all dashboards!")
+        total_time = round(time.time() - overall_start, 2)
+        print("="*50 + f"\n🎉 All dashboards finished in {total_time} seconds total!")
 
 if __name__ == "__main__":
     auto_refresh_all_dashboards()
