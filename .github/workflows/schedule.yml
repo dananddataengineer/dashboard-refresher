@@ -2,8 +2,8 @@ name: 30-Min Dashboard Auto Refresh
 
 on:
   schedule:
-    # Runs automatically every 30 minutes
-    - cron: '*/30 * * * *'
+    # Runs at 5 and 35 minutes past every hour (avoids GitHub top-of-hour congestion)
+    - cron: '5,35 * * * *'
   workflow_dispatch: # Allows manual trigger anytime
 
 jobs:
