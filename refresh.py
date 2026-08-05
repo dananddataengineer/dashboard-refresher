@@ -1,10 +1,22 @@
 import time
 from playwright.sync_api import sync_playwright
 
-BASE_URL = "https://bi.apollohealthbridge.in"
 MAIN_URL = "https://bi.apollohealthbridge.in/dashboards/"
 
-def auto_refresh_all_dashboards():
+# All dashboard names from your sidebar menu image:
+DASHBOARDS = [
+    "IQMS",
+    "Doctor Performance",
+    "Clinics Performance",
+    "Corporate Performance",
+    "Healthpulse",
+    "Self check in",
+    "Consent form",
+    "Phlebo slot utilization",
+    "Billing Intelligence & Service Analytics",
+]
+
+def refresh_all_sidebar_dashboards():
     overall_start = time.time()
 
     with sync_playwright() as p:
@@ -12,47 +24,41 @@ def auto_refresh_all_dashboards():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Step 1: Open main dashboards page
         print(f"📌 Opening main page: {MAIN_URL}")
-        main_start = time.time()
         page.goto(MAIN_URL, timeout=60000)
-        time.sleep(5)
-        print(f"   Main page loaded in {round(time.time() - main_start, 2)} seconds.")
+        
+        # Wait 8 seconds for React app & sidebar to fully load
+        time.sleep(8)
 
-        # Step 2: Discover all dashboard links
-        links = page.locator("a[href*='/dashboards/']").all()
-        found_urls = set()
+        print(f"\n🔍 Found {len(DASHBOARDS)} dashboards in menu. Starting refresh...\n" + "="*60)
 
-        for link in links:
-            href = link.get_attribute("href")
-            if href:
-                full_url = href if href.startswith("http") else f"{BASE_URL}{href}"
-                found_urls.add(full_url)
-
-        urls_list = list(found_urls)
-        if not urls_list:
-            urls_list = [MAIN_URL]
-
-        print(f"\n🔍 Found {len(urls_list)} dashboard(s) to refresh.\n" + "="*50)
-
-        # Step 3: Visit each dashboard and measure exact loading time
-        for idx, url in enumerate(urls_list, start=1):
-            print(f"[{idx}/{len(urls_list)}] Refreshing: {url}")
+        for idx, dash_name in enumerate(DASHBOARDS, start=1):
             dash_start = time.time()
+            print(f"[{idx}/{len(DASHBOARDS)}] Clicking Sidebar Menu: '{dash_name}'")
             
             try:
-                page.goto(url, timeout=60000)
-                time.sleep(10)  # Wait for charts/data to finish rendering
+                # 1. Locate the sidebar text and click it
+                menu_item = page.get_by_text(dash_name, exact=True)
                 
+                # If exact match fails, try partial match
+                if not menu_item.is_visible():
+                    menu_item = page.locator(f"text='{dash_name}'").first
+
+                menu_item.click(timeout=10000)
+                
+                # 2. Wait 10 seconds for the charts and data of this dashboard to load
+                time.sleep(10)
+
                 time_taken = round(time.time() - dash_start, 2)
-                print(f"   ✓ Success | Title: {page.title()} | Time Taken: {time_taken}s")
+                print(f"   ✓ Successfully refreshed '{dash_name}' in {time_taken}s")
+                
             except Exception as e:
                 time_taken = round(time.time() - dash_start, 2)
-                print(f"   ❌ Failed after {time_taken}s | Error: {e}")
+                print(f"   ❌ Failed to click '{dash_name}' after {time_taken}s | Error: {e}")
 
         browser.close()
         total_time = round(time.time() - overall_start, 2)
-        print("="*50 + f"\n🎉 All dashboards finished in {total_time} seconds total!")
+        print("="*60 + f"\n🎉 All {len(DASHBOARDS)} dashboards refreshed in {total_time}s total!")
 
 if __name__ == "__main__":
-    auto_refresh_all_dashboards()
+    refresh_all_sidebar_dashboards()
