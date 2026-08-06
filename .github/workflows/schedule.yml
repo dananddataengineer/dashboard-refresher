@@ -1,10 +1,10 @@
-name: 30-Min Dashboard Auto Refresh
+name: 1-Hour Dashboard Auto Refresh
 
 on:
   schedule:
-    # Runs at 5 and 35 minutes past every hour (avoids GitHub top-of-hour congestion)
-    - cron: '5,35 * * * *'
-  workflow_dispatch: # Allows manual trigger anytime
+    # Runs at 15 minutes past every hour (e.g., 1:15, 2:15, 3:15, 4:15...)
+    - cron: '12 * * * *'
+  workflow_dispatch: # Allows manual and external webhook triggers
 
 jobs:
   run-auto-refresh:
